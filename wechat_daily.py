@@ -215,7 +215,12 @@ def export_incremental(cfg, username, path):
                        capture_output=True, text=True, timeout=cfg["per_chat_timeout"])
     out = (r.stdout + r.stderr)
     if r.returncode != 0 or not os.path.exists(tmp):
-        return ("ok", len(blocks), [], Counter())   # nothing new / boundary empty
+        # The delta export errored or produced no file (e.g. a transient DB lock
+        # during the multi-chat sweep). DON'T swallow it as "nothing new" — that
+        # silently drops messages and then poisons last_msg_ts. Fall back to a full
+        # re-export of this chat so newer messages are never lost (added=None → full rewrite).
+        st, n, _ = export_full(cfg, username, path)
+        return (st, n, None, Counter())
     _, tblocks = read_blocks(tmp)
     try: os.remove(tmp)
     except OSError: pass

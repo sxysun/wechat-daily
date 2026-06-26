@@ -34,7 +34,7 @@ CONFIG_PATH = os.path.join(APP_DIR, "config.json")
 STATE_PATH = os.path.join(APP_DIR, "state.json")
 AGENT_LABEL = "com.wechat-daily.export"
 PLIST_PATH = os.path.join(HOME, "Library", "LaunchAgents", f"{AGENT_LABEL}.plist")
-SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+SRC_DIR = os.path.dirname(os.path.realpath(__file__))  # realpath: resolve the ~/.local/bin symlink to the real repo dir
 if SRC_DIR not in sys.path:
     sys.path.insert(0, SRC_DIR)  # so `import streams`/`import tui` work via the symlink
 

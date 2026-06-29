@@ -374,6 +374,11 @@ def do_run(cfg, state, mode, verbose=True):
         streams.publish_due(cfg, verbose=verbose)
     except Exception as e:
         log(out_dir, f"streams publish error: {e}")
+    try:
+        import rednote
+        rednote.publish_due(verbose=verbose)
+    except Exception as e:
+        log(out_dir, f"rednote publish error: {e}")
     log(out_dir, "=== run done ===")
     if verbose:
         print(f"\nDone ({mode}): {ok} updated, {skipped} idle skipped, {fail} failed.")
@@ -571,12 +576,19 @@ def main():
     pstm.add_argument("rest", nargs="*")
     pstm.add_argument("--dry", action="store_true", help="preview instead of publishing")
     pstm.add_argument("--day", action="store_true", help="publish the latest full day, not just new-since-last")
+    prn = sub.add_parser("rednote", help="publish RedNote searches as daily Router intel feeds")
+    prn.add_argument("rednote_action", nargs="?", default="list",
+                     choices=["list", "status", "check", "add", "config", "preview", "publish"])
+    prn.add_argument("rednote_rest", nargs="*")
     args = ap.parse_args()
     cfg, state = load_config(), load_state()
 
     if args.cmd == "streams":
         import streams
         return streams.dispatch(cfg, args)
+    if args.cmd == "rednote":
+        import rednote
+        return rednote.dispatch(args)
 
     if args.cmd == "run":
         mode = "full" if args.full else "incremental" if args.incremental else decide_mode(cfg, state)

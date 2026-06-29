@@ -19,6 +19,9 @@ incremental/full** strategy, snapshots, and self-healing.
 - WeChat for Mac, logged in
 - *Optional, for Streams:* the [`router`](https://router.feedling.app) CLI (publishing) and
   [Claude Code](https://claude.com/claude-code) (`claude`, for agent-interpreted streams)
+- *Optional, for RedNote streams:* [`OpenCLI`](https://github.com/jackwener/OpenCLI)
+  with its Browser Bridge extension, Chrome logged into `rednote.com`, plus `router`
+  and `claude`
 
 ## How the hybrid mode works
 
@@ -98,8 +101,9 @@ can search/follow them. Curation per stream:
   the batch and publishes an *interpreted daily intel update* (TL;DR, developments,
   signals/deltas, tools & links, sentiment). It's stateful (keeps a per-stream running
   brief at `~/.wechat-daily/streams/<id>.brief.md`) and can web-search to enrich.
-  Configure `lens` (analyst objective) and `agent_model` (sonnet/opus/haiku). Output
-  is one entry, so no chunking. Uses your existing Claude Code — no API keys.
+  Configure `lens` (analyst objective), `agent_model` (sonnet/opus/haiku),
+  `language`, and `source_note`. Output is one entry, so no chunking. Uses your
+  existing Claude Code — no API keys.
 
 Run **`wechat-daily streams`** (no args) to open the **terminal cockpit**: a two-pane
 curses UI — chat library on the left, per-stream config + live preview on the right.
@@ -119,6 +123,52 @@ curses UI — chat library on the left, per-stream config + live preview on the 
 Each daily agent run publishes all `active` streams automatically (only their
 new-since-last messages). Big days are split into chunked entries. Per-stream config
 lives in `~/.wechat-daily/streams/<id>.json`.
+
+## RedNote streams — daily market research via OpenCLI
+
+You can also publish a daily RedNote search as a Router intel feed. This uses
+OpenCLI's built-in `rednote` adapter, not third-party OpenCLI plugins.
+
+Prereqs:
+
+```bash
+npm install -g @jackwener/opencli
+# Install OpenCLI Browser Bridge, then keep Chrome logged into https://www.rednote.com
+opencli rednote login --site-session persistent
+wechat-daily rednote check
+router --version
+claude --version
+```
+
+Create and test a RedNote stream:
+
+```bash
+wechat-daily rednote add "AI hardware"
+wechat-daily rednote config ai-hardware language 中文
+wechat-daily rednote preview ai-hardware
+wechat-daily rednote publish ai-hardware
+```
+
+Useful knobs:
+
+```bash
+wechat-daily rednote config ai-hardware limit 30          # search rows
+wechat-daily rednote config ai-hardware detail_limit 8    # note pages to open
+wechat-daily rednote config ai-hardware lens "consumer AI product demand and creator sentiment"
+wechat-daily rednote config ai-hardware channel rednote-ai-hardware
+wechat-daily rednote config ai-hardware status paused
+```
+
+Active RedNote streams run after the normal daily WeChat export. Config lives in
+`~/.wechat-daily/rednote/<id>.json`; each stream keeps a running brief at
+`~/.wechat-daily/rednote/<id>.brief.md` so the agent can call out deltas instead of
+repeating yesterday's themes.
+
+If your scheduled `launchd` environment cannot find a globally installed binary, set
+`WECHAT_DAILY_OPENCLI=/path/to/opencli` or `WECHAT_DAILY_CLAUDE=/path/to/claude`.
+The RedNote integration calls OpenCLI with `--site-session persistent`; if collection
+ever reports `AUTH_REQUIRED`, rerun the `opencli rednote login --site-session persistent`
+command above in the same Chrome profile.
 
 ## Config (`~/.wechat-daily/config.json`)
 
